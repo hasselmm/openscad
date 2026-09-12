@@ -124,6 +124,33 @@ void TestScadLexerFolding::testFolding_data()
     << QList<int>{0, 1, 1, 1, 0}
     << QList<int>{0};
 
+  // Regression guard: A semicolon inside a quoted string must not be
+  // mistaken for the terminator of the enclosing 'function' definition.
+  QTest::newRow("semicolon_in_string")
+    << R"(
+        function vector_font() = [
+          [32, " ", /*...*/],
+          [59, ";", /*...*/],
+          [65, "A", /*...*/],
+        ];
+        x = 1;
+      )"
+    << QList<int>{0, 2, 2, 2, 2, 0}
+    << QList<int>{0};
+
+  // Regression guard: A semicolon inside a quoted string must not be
+  // mistaken for the terminator of the enclosing 'function' definition.
+  QTest::newRow("semicolon_in_comment")
+    << R"(
+        function semicolon_in_comment(a, b)
+          = a // line comment; don't stop at the semicolon
+          + b /* block comment; don't stop at the semicolon */
+          ;
+        x = 1;
+      )"
+    << QList<int>{0, 1, 1, 1, 0}
+    << QList<int>{0};
+
   // clang-format on
 }
 
