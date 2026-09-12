@@ -7,6 +7,11 @@
 
 namespace {
 
+int lineCount(QsciScintilla *qsci)
+{
+  return qsci->SendScintilla(QsciScintilla::SCI_GETLINECOUNT);
+}
+
 int rawFoldLevel(QsciScintilla *qsci, int line)
 {
   return qsci->SendScintilla(QsciScintilla::SCI_GETFOLDLEVEL, line);
@@ -137,13 +142,19 @@ void TestScadLexerFolding::testFolding()
   editor->setPlainText(source.trimmed());
   editor->resetHighlighting();
 
-  for (auto line = 0; line < expectedDepths.size(); ++line) {
-    const auto actualFolding = std::tuple{line, isFoldHeader(editor->qsci, line)};
-    const auto expectedFolding = std::tuple{line, expectedHeaders.contains(line)};
-    QCOMPARE(actualFolding, expectedFolding);
+  auto actualDepths = QList<int>{};
+  auto actualHeaders = QList<int>{};
 
-    const auto actualDepth = std::tuple{line, foldDepth(editor->qsci, line)};
-    const auto expectedDepth = std::tuple{line, expectedDepths[line]};
-    QCOMPARE(actualDepth, expectedDepth);
+  for (auto line = 0; line < expectedDepths.size(); ++line) {
+    actualDepths += foldDepth(editor->qsci, line);
+
+    if (isFoldHeader(editor->qsci, line)) {
+      actualHeaders += line;
+    }
   }
+
+  QCOMPARE(lineCount(editor->qsci), expectedDepths.count());
+
+  QCOMPARE(actualDepths, expectedDepths);
+  QCOMPARE(actualHeaders, expectedHeaders);
 }
